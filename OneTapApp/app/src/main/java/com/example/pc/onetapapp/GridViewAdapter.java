@@ -8,7 +8,10 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,15 +21,17 @@ public class GridViewAdapter extends ArrayAdapter {
     private List<String> data = new ArrayList<String>();
     private int resourceId;
     private ArrayList<Boolean> states = new ArrayList<>();
-    LayoutInflater inflater ;
+    private boolean online;
+    LayoutInflater inflater;
 
-    public GridViewAdapter(Context context, int resourceId, List<String> data) {
+    public GridViewAdapter(Context context, int resourceId, List<String> data, Boolean online) {
         super(context, resourceId, data);
         this.resourceId = resourceId;
         this.context = context;
         this.data = data;
+        this.online = online;
         inflater = LayoutInflater.from(context);
-        for(int i = 0; i< data.size(); i++){
+        for (int i = 0; i < data.size(); i++) {
             states.add(false);
         }
     }
@@ -50,15 +55,31 @@ public class GridViewAdapter extends ArrayAdapter {
             holder = (ViewHolder) row.getTag();
         }
 
-        Glide.with(context)
-                .load( data.get(position))
-                .fitCenter()
-                .centerCrop()
-                .into(holder.image);
-        holder.imagePath.setText(data.get(position));
-        if(states.get(position)){
+
+        if (online) {
+
+            Glide.with(context)
+                    .load(data.get(position))
+                    .fitCenter()
+                    .centerCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(holder.image);
+            holder.imagePath.setText(data.get(position));
+
+        } else {
+
+            Glide.with(context)
+                    .load(data.get(position))
+                    .fitCenter()
+                    .centerCrop()
+                    .into(holder.image);
+            holder.imagePath.setText(data.get(position));
+        }
+
+        //Sets the highlight colour
+        if (states.get(position)) {
             row.setBackgroundColor(Color.GREEN);
-        }else{
+        } else {
             row.setBackgroundColor(Color.TRANSPARENT);
         }
 
@@ -66,20 +87,20 @@ public class GridViewAdapter extends ArrayAdapter {
     }
 
     //Displays a border when an image is selected
-    public void changeSelection(int position, View convertView){
-        if(states.get(position)){
+    public void changeSelection(int position, View convertView) {
+        if (states.get(position)) {
             states.set(position, false);
             convertView.setBackgroundColor(Color.TRANSPARENT);
-        }else{
+        } else {
             states.set(position, true);
             convertView.setBackgroundColor(Color.GREEN);
         }
     }
 
     //Checks if there are any images selected
-    public boolean checkStatus(){
-        for(int i=0; i<states.size();i++){
-            if(states.get(i)){
+    public boolean checkStatus() {
+        for (int i = 0; i < states.size(); i++) {
+            if (states.get(i)) {
                 return true;
             }
         }
@@ -87,11 +108,11 @@ public class GridViewAdapter extends ArrayAdapter {
     }
 
     //Returns array of paths of selected images
-    public ArrayList<String> getSelectedPaths(){
+    public ArrayList<String> getSelectedPaths() {
         ArrayList<String> tempPaths = new ArrayList<>();
 
-        for(int i=0;i<states.size();i++){
-            if(states.get(i)){
+        for (int i = 0; i < states.size(); i++) {
+            if (states.get(i)) {
                 tempPaths.add(data.get(i));
             }
         }

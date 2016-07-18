@@ -1,6 +1,5 @@
 package com.example.pc.onetapapp;
 
-
 import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
@@ -45,25 +44,19 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String AUTHORIZATION_URL = "https://api.imgur.com/oauth2/authorize";
     private static final String CLIENT_ID = "4c0b698b5b63cee";
-    final String uploadUrl = "https://api.imgur.com/3/upload";
     private OAuth2AccessToken accessToken;
-    private String authorizationUrl = "";
+    private String authorizationUrl = null;
     private String code = "";
-
 
     private GridView gridView;
     private GridViewAdapter gridAdapter;
     private List<String> imageItems;
-    // private String imagePath = "";
-    private Boolean tokenState;
-
     Button uploadImage;
 
     final OAuth20Service service = new ServiceBuilder()
             .apiKey(AUTHORIZATION_URL)
             .apiSecret(CLIENT_ID)
             .build(ImgurApi.instance());
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,23 +65,18 @@ public class MainActivity extends AppCompatActivity {
 
         String state = Environment.getExternalStorageState();
         if (state.contentEquals(Environment.MEDIA_MOUNTED) || state.contentEquals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
-            //imagePath = Environment.getExternalStorageDirectory().toString();
-
             imageItems = new ArrayList<>();
             imageItems = getImageLocations();
-
-            // tokenState = false;
         } else {
             Log.v("Error", "External Storage Unaccessible: " + state);
             //EXIT APP HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
 
         uploadImage = (Button) findViewById(R.id.uploadImageBtn);
-
         gridView = (GridView) findViewById(R.id.gridView);
         gridView.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE);
 
-        gridAdapter = new GridViewAdapter(this, R.layout.grid_item, imageItems);
+        gridAdapter = new GridViewAdapter(this, R.layout.grid_item, imageItems, false);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
                 gridAdapter.changeSelection(position, v);
@@ -98,10 +86,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     uploadImage.setVisibility(View.GONE);
                 }
-
-              /*  String imagePath = ((TextView) v.findViewById(R.id.text)).getText().toString();
-                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-                intent.putExtra("imagePath", imagePath); */
             }
         });
         gridView.setAdapter(gridAdapter);
@@ -133,50 +117,25 @@ public class MainActivity extends AppCompatActivity {
         return listOfAllImages;
     }
 
-    /*
-    public void requestToken(){
-
-        Map<String, String> parameters = new HashMap<String, String>();
-        parameters.put("client_id", CLIENT_ID);
-        parameters.put("response_type", "token");
-        parameters.put("state", "init");
-
-        System.out.println("Requesting Auth token");
-        Requests jsObjRequest = new Requests(Request.Method.POST, AUTHORIZATION_URL, parameters, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    System.out.println(response.toString());
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError response) {
-                Log.d("Response: ", response.toString());
-            }
-        });
-        ApplicationSingleton.getInstance().addToRequestQueue(jsObjRequest);
-    }*/
+    public void uploadedImages(View view){
+        Intent intent = new Intent(MainActivity.this, UploadedImagesActivity.class);
+        startActivity(intent);
+    }
 
     //Uploads images to imgur
     public void uploadImages(View view) {
 
         authorizationUrl = service.getAuthorizationUrl();
 
-        //
-        try{
+        // Check if refresh_token is needed
+        try {
 
-        }catch (Exception exp) {
+        } catch (Exception exp) {
         }
 
 
-
         //If device is not authorize yet
-        if (authorizationUrl.equals("")) {
+        if (authorizationUrl.isEmpty()) {
 
             final Dialog dialog = new Dialog(this);
             dialog.setContentView(R.layout.activate_app_dialog);
@@ -192,15 +151,14 @@ public class MainActivity extends AppCompatActivity {
                     EditText actiCode = (EditText) findViewById(R.id.activateEditText);
                     code = actiCode.getText().toString();
 
+                    //Gets accessToken using code provided by user
                     try {
                         accessToken = service.getAccessToken(code);
+                        Log.d("tag", "AccessToken received");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-
                 }
-
-
             });
         }
 
@@ -229,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
                         .build();
 
 
-                httpPost.setHeader("Authorization", "Bearer " + accessToken );
+                httpPost.setHeader("Authorization", "Bearer " + accessToken);
                 httpPost.setEntity(entity);
 
                 final HttpResponse response = httpClient.execute(httpPost,
@@ -259,7 +217,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean aBoolean) {
             super.onPostExecute(aBoolean);
             if (aBoolean.booleanValue()) {
-
+                Intent intent = new Intent(MainActivity.this, UploadedImagesActivity.class);
+                startActivity(intent);
             }
         }
     }

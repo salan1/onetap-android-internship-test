@@ -9,30 +9,49 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.pc.onetapapp.MainActivity">
 
-     <GridView
+    <GridView
         android:id="@+id/gridView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:numColumns="auto_fit"
-        android:stretchMode="columnWidth"
-        android:focusable="true"
-        android:clickable="true"
-        android:columnWidth="100dp"
-        android:verticalSpacing="5dp"
+
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
-        android:layout_above="@+id/uploadImageBtn" />
+        android:clickable="true"
+        android:columnWidth="100dp"
+        android:focusable="true"
+        android:numColumns="auto_fit"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="5dp"
+        android:layout_above="@+id/linearLayout1"
+        android:layout_marginBottom="10dp" />
 
-    <Button
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Upload Images"
-        android:id="@+id/uploadImageBtn"
+        android:orientation="horizontal"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
-        android:visibility="gone"
-        android:onClick="uploadImages"/>
+        android:id="@+id/linearLayout1">
+
+        <Button
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:onClick="uploadedImages"
+            android:text="Uploaded Images"
+            android:layout_marginRight="20dp" />
+
+
+        <Button
+            android:id="@+id/uploadImageBtn"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:onClick="uploadImages"
+            android:text="Upload Images"
+            android:visibility="gone"/>
+
+
+    </LinearLayout>
+
 
 </RelativeLayout>
