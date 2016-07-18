@@ -7,7 +7,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class PrefManager {
 
@@ -19,6 +21,7 @@ public class PrefManager {
 
     private static final String PREF_NAME = "OneTap";
     private static final String KEY_Uploaded_Urls = "";
+    private static final String KEY_token = null;
 
     public PrefManager(Context context) {
         this._context = context;
@@ -31,19 +34,21 @@ public class PrefManager {
         editor.commit();
     }
 
-    public ArrayList<String> getUrls(){
+    public ArrayList<String> getUrls() {
         Gson gson = new Gson();
         String json = pref.getString(KEY_Uploaded_Urls, null);
-        Type type = new TypeToken<ArrayList<String>>() {}.getType();
+        Type type = new TypeToken<ArrayList<String>>() {
+        }.getType();
         ArrayList<String> arrayList = gson.fromJson(json, type);
         return arrayList;
     }
 
-    public void addUrl(String url){
+    public void addUrl(String url) {
         //Converting String to gson and then to ArrayList
         Gson gson = new Gson();
         String json = pref.getString(KEY_Uploaded_Urls, null);
-        Type type = new TypeToken<ArrayList<String>>() {}.getType();
+        Type type = new TypeToken<ArrayList<String>>() {
+        }.getType();
         ArrayList<String> arrayList = gson.fromJson(json, type);
         arrayList.add(url);
 
@@ -53,5 +58,16 @@ public class PrefManager {
         editor.putString(TAG, jsonSave);
         editor.commit();
     }
+
+    public void saveAccessToken(String temp){
+        editor.putString(KEY_token, temp);
+        editor.commit();
+    }
+
+    public String getAccessToken(){
+        String accessToken = pref.getString(KEY_token, null);
+        return accessToken;
+    }
+
 
 }

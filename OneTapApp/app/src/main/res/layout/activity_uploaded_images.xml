@@ -7,6 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="#D3D3D3"
     tools:context="com.example.pc.onetapapp.UploadedImagesActivity">
 
     <GridView
@@ -28,6 +29,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Back"
+        android:background="#507DD1"
         android:id="@+id/backBn"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"

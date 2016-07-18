@@ -7,13 +7,14 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="#D3D3D3"
     tools:context="com.example.pc.onetapapp.MainActivity">
 
     <GridView
         android:id="@+id/gridView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-
+        android:background="#D3D3D3"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
@@ -39,12 +40,14 @@
             android:layout_height="wrap_content"
             android:onClick="uploadedImages"
             android:text="Uploaded Images"
+            android:background="#507DD1"
             android:layout_marginRight="20dp" />
 
 
         <Button
             android:id="@+id/uploadImageBtn"
             android:layout_width="150dp"
+            android:background="#507DD1"
             android:layout_height="wrap_content"
             android:onClick="uploadImages"
             android:text="Upload Images"
