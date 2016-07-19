@@ -44,7 +44,7 @@
                 android:layout_gravity="center_vertical" />
 
             <EditText
-                android:layout_width="50dp"
+                android:layout_width="170dp"
                 android:layout_height="50dp"
                 android:id="@+id/activateEditText"
                 android:layout_gravity="right" />

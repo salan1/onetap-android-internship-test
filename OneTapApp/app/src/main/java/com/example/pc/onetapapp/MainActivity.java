@@ -24,6 +24,8 @@ import com.example.pc.onetapapp.SharedPref.ApplicationSingleton;
 import com.github.scribejava.apis.ImgurApi;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
+import com.github.scribejava.core.model.OAuthAsyncRequestCallback;
+import com.github.scribejava.core.model.Token;
 import com.github.scribejava.core.oauth.OAuth20Service;
 
 import org.apache.http.HttpEntity;
@@ -80,7 +82,11 @@ public class MainActivity extends AppCompatActivity {
         if (state.contentEquals(Environment.MEDIA_MOUNTED) || state.contentEquals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
             imageItems = new ArrayList<>();
             imageItems = getImageLocations();
-            startService();
+
+            if (ApplicationSingleton.getInstance().getPrefManager().getAccessToken() == null) {
+                startService();
+            }
+
         } else {
             Log.v("Error", "External Storage Inaccessible: " + state);
             new AlertDialog.Builder(this)
@@ -116,17 +122,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startService() {
-        try{
+        try {
             service = new ServiceBuilder()
-                    .apiKey(Client_Secret)
-                    .apiSecret(CLIENT_ID)
+                    .apiKey(CLIENT_ID)
+                    .apiSecret(Client_Secret)
                     .build(ImgurApi.instance());
-        }catch (Exception exp){
+        } catch (Exception exp) {
             exp.printStackTrace();
             Log.d("tag", "Error start service!!!");
         }
     }
-
 
     public ArrayList<String> getImageLocations() {
         Uri uri;
@@ -164,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         //If device is not authorize yet
         if (ApplicationSingleton.getInstance().getPrefManager().getAccessToken() == null) {
 
-            authorizationUrl = service.getAuthorizationUrl();
+            authorizationUrl = "https://api.imgur.com/oauth2/authorize?response_type=pin&client_id=" + CLIENT_ID;
             Log.d("tag", authorizationUrl);
 
             final Dialog dialog = new Dialog(this);
@@ -178,18 +183,15 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
 
-                    EditText actiCode = (EditText) findViewById(R.id.activateEditText);
+                    EditText actiCode = (EditText) dialog.findViewById(R.id.activateEditText);
                     code = actiCode.getText().toString();
 
                     //Gets accessToken using code provided by user
-                    try {
-                        ApplicationSingleton.getInstance().getPrefManager().saveAccessToken(service.getAccessToken(code).toString());
-                        Log.d("tag", "AccessToken received");
-                        runUpload();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
+                    Log.d("tag", "Code: " + code);
+                    new GetToken().execute(code.trim());
+                    dialog.cancel();
                 }
+
             });
             Button cancelButton = (Button) dialog.findViewById(R.id.cancelActivateApp);
 
@@ -212,53 +214,118 @@ public class MainActivity extends AppCompatActivity {
 
         //Add Progress bar here!!!!!!
         for (int i = 0; i < paths.size(); i++) {
-            UploadToImgurTask(paths.get(i));
+            new UploadToImgurTask().execute(paths.get(i));
         }
 
     }
 
-    // Here is the upload task
-    public boolean UploadToImgurTask(String path) {
+    class UploadToImgurTask extends AsyncTask<String, Void, Boolean> {
 
-        final String upload_to = "https://api.imgur.com/3/upload";
+        @Override
+        protected Boolean doInBackground(String... params) {
+            final String upload_to = "https://api.imgur.com/3/image";
 
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpContext localContext = new BasicHttpContext();
-        HttpPost httpPost = new HttpPost(upload_to);
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpContext localContext = new BasicHttpContext();
+            HttpPost httpPost = new HttpPost(upload_to);
 
-        try {
-            HttpEntity entity = MultipartEntityBuilder.create()
-                    .addPart("image", new FileBody(new File(path)))
-                    .build();
+            String errorMessage = "";
 
+            try {
+                HttpEntity entity = MultipartEntityBuilder.create()
+                        .addPart("image", new FileBody(new File(params[0])))
+                        .build();
 
-            httpPost.setHeader("Authorization", "Bearer " + ApplicationSingleton.getInstance().getPrefManager().getAccessToken());
-            httpPost.setEntity(entity);
+                Log.d("tag", ApplicationSingleton.getInstance().getPrefManager().getAccessToken());
+                httpPost.setHeader("Authorization", "Bearer " + ApplicationSingleton.getInstance().getPrefManager().getAccessToken());
+                httpPost.setEntity(entity);
 
-            final HttpResponse response = httpClient.execute(httpPost,
-                    localContext);
+                final HttpResponse response = httpClient.execute(httpPost,
+                        localContext);
 
-            final String response_string = EntityUtils.toString(response
-                    .getEntity());
+                final String response_string = EntityUtils.toString(response
+                        .getEntity());
 
-            final JSONObject json = new JSONObject(response_string);
+                final JSONObject json = new JSONObject(response_string);
 
-            Log.d("tag", json.toString());
+                Log.d("tag", json.toString());
 
-            //Store the url of the uploaded image
-            JSONObject data = json.optJSONObject("data");
-            String uploadedImageUrl = data.optString("link");
-            ApplicationSingleton.getInstance().getPrefManager().addUrl(uploadedImageUrl);
-            Log.d("tag", "uploaded image url : " + uploadedImageUrl);
+                JSONObject data = json.optJSONObject("data");
+                errorMessage = data.getString("error");
 
-            return true;
+                //If accessToken has expired
+                if(errorMessage.equals("The access token provided is invalid.")){
+                    Log.d("tag", "AccessToken expired");
 
-        } catch (Exception e) {
-            e.printStackTrace();
+                    String refresh = ApplicationSingleton.getInstance().getPrefManager().getRefresh();
+                    Log.d("tag", "RefreshToken: " + refresh);
+                    OAuth2AccessToken accessToken = service.refreshAccessToken(refresh);;
+                    Log.d("tag", "AccessToken response: " + accessToken + " raw response: " + accessToken.getRawResponse() + " expires in: " + accessToken.getExpiresIn());
+
+                    ApplicationSingleton.getInstance().getPrefManager().saveAccessToken(accessToken.getAccessToken().toString());
+                    ApplicationSingleton.getInstance().getPrefManager().saveRefresh(accessToken.getRefreshToken().toString());
+
+                    final HttpResponse response1 = httpClient.execute(httpPost,
+                            localContext);
+
+                    final String response_string1 = EntityUtils.toString(response1
+                            .getEntity());
+
+                    final JSONObject json1 = new JSONObject(response_string1);
+                    Log.d("tag", json1.toString());
+                    data = json.optJSONObject("data");
+                }
+
+                //Store the url of the uploaded image
+                String uploadedImageUrl = data.getString("link");
+
+                Log.d("tag", "uploaded image url: " + uploadedImageUrl);
+                ApplicationSingleton.getInstance().getPrefManager().addUrl(uploadedImageUrl);
+
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+
+            }
+            return false;
         }
-        return false;
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+            if (aBoolean.booleanValue()) {
+                //  Intent intent = new Intent(MainActivity.this, UploadedImagesActivity.class);
+                //  startActivity(intent);
+            }
+        }
     }
 
+    class GetToken extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+            try {
+                final OAuth2AccessToken accessToken = service.getAccessToken(params[0]);
+
+                Log.d("tag", "AccessToken response: " + accessToken + " raw response: " + accessToken.getRawResponse() + " expires in: " + accessToken.getExpiresIn());
+                ApplicationSingleton.getInstance().getPrefManager().saveAccessToken(accessToken.getAccessToken().toString());
+                ApplicationSingleton.getInstance().getPrefManager().saveRefresh(accessToken.getRefreshToken().toString());
+
+                Log.d("tag", "AccessToken received");
+                return true;
+            } catch (IOException exp) {
+                exp.printStackTrace();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+            if (aBoolean.booleanValue()) {
+                runUpload();
+            }
+        }
+    }
 
 }
 
