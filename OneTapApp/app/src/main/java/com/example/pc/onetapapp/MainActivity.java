@@ -1,6 +1,7 @@
 package com.example.pc.onetapapp;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -24,8 +25,6 @@ import com.example.pc.onetapapp.SharedPref.ApplicationSingleton;
 import com.github.scribejava.apis.ImgurApi;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
-import com.github.scribejava.core.model.OAuthAsyncRequestCallback;
-import com.github.scribejava.core.model.Token;
 import com.github.scribejava.core.oauth.OAuth20Service;
 
 import org.apache.http.HttpEntity;
@@ -55,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
     private GridView gridView;
     private GridViewAdapter gridAdapter;
     private List<String> imageItems;
-    Button uploadImage;
+    private Button uploadImage;
+    private ProgressDialog progress;
 
     private OAuth20Service service;
 
@@ -212,6 +212,12 @@ public class MainActivity extends AppCompatActivity {
     public void runUpload() {
         ArrayList<String> paths = gridAdapter.getSelectedPaths();
 
+        progress = new ProgressDialog(this);
+        progress.setMessage("Uploading Images");
+        progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progress.setMax(paths.size());
+        progress.show();
+
         //Add Progress bar here!!!!!!
         for (int i = 0; i < paths.size(); i++) {
             new UploadToImgurTask().execute(paths.get(i));
@@ -283,8 +289,20 @@ public class MainActivity extends AppCompatActivity {
                 ApplicationSingleton.getInstance().getPrefManager().addUrl(uploadedImageUrl);
 
                 return true;
+
             } catch (Exception e) {
                 e.printStackTrace();
+                progress.cancel();
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Unable to upload")
+                        .setMessage("Sorry unable to upload image, please try again")
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
 
             }
             return false;
@@ -294,8 +312,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean aBoolean) {
             super.onPostExecute(aBoolean);
             if (aBoolean.booleanValue()) {
-                //  Intent intent = new Intent(MainActivity.this, UploadedImagesActivity.class);
-                //  startActivity(intent);
+                progress.incrementProgressBy(1);
             }
         }
     }
