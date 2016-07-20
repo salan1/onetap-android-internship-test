@@ -55,9 +55,8 @@ public class GridViewAdapter extends ArrayAdapter {
             holder = (ViewHolder) row.getTag();
         }
 
-
+        //If receiving images from Imgur service
         if (online) {
-
             Glide.with(context)
                     .load(data.get(position))
                     .fitCenter()
@@ -65,8 +64,9 @@ public class GridViewAdapter extends ArrayAdapter {
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(holder.image);
             holder.imagePath.setText(data.get(position));
-
-        } else {
+        }
+        //If receiving images from local storage
+        else {
 
             Glide.with(context)
                     .load(data.get(position))
