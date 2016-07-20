@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public boolean uploadData(String path) {
-        final String upload_to = "https://api.imgur.com/3/image";
+        final String upload_to = "https://api.imgur.com/3/upload";
 
         HttpClient httpClient = new DefaultHttpClient();
         HttpContext localContext = new BasicHttpContext();
@@ -346,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d("tag", "AccessToken received");
                 return true;
-            } catch (IOException exp) {
+            } catch (Exception exp) {
                 exp.printStackTrace();
                 return false;
             }
