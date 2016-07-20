@@ -56,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
     private List<String> imageItems;
     private Button uploadImage;
     private ProgressDialog progress;
-
     private OAuth20Service service;
 
     @Override
@@ -231,21 +230,27 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<String> passed = params[0]; //get passed ArrayList
 
             for (String tempPath : passed) {
+                int refreshTries = 5;
                 while (!uploadData(tempPath)) {
                     //If current accessToken is not valid
                     String refresh = ApplicationSingleton.getInstance().getPrefManager().getRefresh();
                     Log.d("tag", "RefreshToken: " + refresh);
+                    if (refreshTries == 0) {
+                        try {
+                            OAuth2AccessToken accessToken = service.refreshAccessToken(refresh);
+                            Log.d("tag", "AccessToken response: " + accessToken + " raw response: " + accessToken.getRawResponse() + " expires in: " + accessToken.getExpiresIn());
 
-                    try {
-                        OAuth2AccessToken accessToken = service.refreshAccessToken(refresh);
-                        Log.d("tag", "AccessToken response: " + accessToken + " raw response: " + accessToken.getRawResponse() + " expires in: " + accessToken.getExpiresIn());
-
-                        ApplicationSingleton.getInstance().getPrefManager().saveAccessToken(accessToken.getAccessToken());
-                        ApplicationSingleton.getInstance().getPrefManager().saveRefresh(accessToken.getRefreshToken());
-                    } catch (IOException exp) {
-                        exp.printStackTrace();
+                            ApplicationSingleton.getInstance().getPrefManager().saveAccessToken(accessToken.getAccessToken());
+                            ApplicationSingleton.getInstance().getPrefManager().saveRefresh(accessToken.getRefreshToken());
+                            refreshTries--;
+                        } catch (IOException exp) {
+                            exp.printStackTrace();
+                            return false;
+                        }
+                    } else {
                         return false;
                     }
+
                 }
             }
 
